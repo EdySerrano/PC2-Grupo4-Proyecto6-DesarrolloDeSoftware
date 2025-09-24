@@ -1,6 +1,6 @@
 # ...
 
-.PHONY: tools build
+.PHONY: tools build test run
 
 tools:
 	@command -v nc >/dev/null || (echo "nc no instalado" && exit 1)
@@ -11,3 +11,9 @@ tools:
 build:
 	@echo "No hay compilacion en bash, solo verificacion"
 	@mkdir -p out
+
+test:
+	bats tests/
+
+run:
+	PORT=$(PORT) APP_ENV=$(APP_ENV) bash src/hello_service.sh
