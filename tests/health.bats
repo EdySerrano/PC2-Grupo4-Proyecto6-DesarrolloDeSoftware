@@ -9,3 +9,9 @@ setup() {
 teardown() {
   kill "$PID"
 }
+
+@test "GET /salud devuelve 200 y contiene 'salud OK'" {
+  run curl -s -o /dev/null -w "%{http_code}" http://localhost:8080
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 200 ]
+}
