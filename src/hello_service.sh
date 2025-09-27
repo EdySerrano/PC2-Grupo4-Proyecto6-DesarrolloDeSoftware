@@ -26,9 +26,21 @@ while true; do
   start_time=$(date +%s%3N)
   uptime=$(($(date +%s) - START_TIME))
   
-  # Respuesta temporal con datos basicos
-  response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\nPeticion #$REQUEST_COUNT - Uptime: ${uptime}s"
-  log "Peticion procesada #$REQUEST_COUNT (uptime: ${uptime}s)"
+  # Simular parseo de endpoint basado en contador (para demo)
+  remainder=$((REQUEST_COUNT % 2))
+  
+  case $remainder in
+    1)
+      # Endpoint /salud
+      response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\nsalud OK - $APP_ENV"
+      log "GET /salud - 200 OK"
+      ;;
+    0)
+      # Simular 404 para rutas no encontradas
+      response="HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\nNot Found"
+      log "GET /unknown - 404 Not Found"
+      ;;
+  esac
   
   echo -e "$response" | nc -l -p "$PORT" -q 1
 done
