@@ -13,7 +13,7 @@ log() {
 }
 
 cleanup() {
-  echo "Servidor detenido. Total de peticiones: $REQUEST_COUNT" >&2
+  echo "Servidor detenido. Total de peticiones: $REQUEST_COUNT"
   exit 0
 }
 trap cleanup SIGINT SIGTERM
@@ -27,16 +27,25 @@ while true; do
   uptime=$(($(date +%s) - START_TIME))
   
   # Simular parseo de endpoint basado en contador (para demo)
-  remainder=$((REQUEST_COUNT % 2))
+  remainder=$((REQUEST_COUNT % 3))
   
   case $remainder in
     1)
-      # Endpoint /salud
+      # Simular /salud
       response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\nsalud OK - $APP_ENV"
       log "GET /salud - 200 OK"
       ;;
+    2)
+      # Simular /metrics con herramientas Unix
+      latency=$(($(date +%s%3N) - start_time))
+      threshold_status=$(echo "$latency $LATENCY_THRESHOLD" | awk '{print ($1 > $2) ? "HIGH" : "OK"}')
+      metrics=$(printf "requests_total %d\nuptime_seconds %d\nlast_request_ms %d\nlatency_status %s" \
+        "$REQUEST_COUNT" "$uptime" "$latency" "$threshold_status")
+      response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n$metrics"
+      log "GET /metrics - 200 OK (latency: ${latency}ms, status: $threshold_status)"
+      ;;
     0)
-      # Simular 404 para rutas no encontradas
+      # Simular 404
       response="HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\nNot Found"
       log "GET /unknown - 404 Not Found"
       ;;
