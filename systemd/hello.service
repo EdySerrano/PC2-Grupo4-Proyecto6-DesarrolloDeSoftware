@@ -1,0 +1,15 @@
+[Unit]
+Description=Servicio Hello para observabilidad mínima
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory={{PROJECT_DIR}}
+ExecStart=/usr/bin/bash src/hello_service.sh
+Restart=on-failure
+Environment=PORT=8080 APP_ENV=prod LATENCY_THRESHOLD=1000
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
