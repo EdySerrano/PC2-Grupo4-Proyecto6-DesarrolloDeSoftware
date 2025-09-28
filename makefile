@@ -1,23 +1,59 @@
+# Variables de configuración
 PORT ?= 8080
 MESSAGE ?= Hola_desde_systemd
+RELEASE ?= v1.0.0
+PROJECT_NAME = hello-oservabilidad-grupo4
+APP_ENV ?= dev
+
+# Directorios	|
+OUT_DIR = out
+DIST_DIR = dist
 
 .PHONY: tools build test run
 
 tools:
-	@command -v nc >/dev/null || (echo "nc no instalado" && exit 1)
-	@command -v dig >/dev/null || (echo "dig no instalado" && exit 1)
-	@command -v bats >/dev/null || (echo "bats no instalado" && exit 1)
-	@echo "Todas las herramientas disponibles"
+	@echo "Verificando herramientas requeridas..."
+	@command -v nc >/dev/null || (echo "ERROR: nc no instalado" && exit 1)
+	@command -v curl >/dev/null || (echo "ERROR: curl no instalado" && exit 1)  
+	@command -v dig >/dev/null || (echo "ERROR: dig no instalado" && exit 1)
+	@command -v bats >/dev/null || (echo "ERROR: bats no instalado" && exit 1)
+	@command -v ss >/dev/null || (echo "ERROR: ss no instalado" && exit 1)
+	@command -v journalctl >/dev/null || (echo "ERROR: journalctl no instalado" && exit 1)
+	@echo "Todas las herramientas están disponibles"
 
-build:
-	@echo "No hay compilacion en bash, solo verificacion"
-	@mkdir -p out
+# Regla patrón para generar artefactos de análisis
+$(OUT_DIR)/%.analysis: src/%.sh | $(OUT_DIR)
+	@echo "Generando análisis para $<..."
+	@bash -n $< && echo "✓ Sintaxis válida" > $@
+	@echo "Líneas de código: $$(wc -l < $<)" >> $@
+	@echo "Funciones definidas: $$(grep -c '^[a-zA-Z_][a-zA-Z0-9_]*()' $< || echo 0)" >> $@
 
-test:
-	bats tests/
+build: tools $(OUT_DIR)
+	@echo "Generando artefactos intermedios..."
+	@mkdir -p $(OUT_DIR)
+	@echo "Verificando sintaxis de scripts..."
+	@for script in src/*.sh; do \
+		echo "Verificando $$script..."; \
+		bash -n $$script || exit 1; \
+	done
+	@echo "Creando archivo de configuración de build..."
+	@echo "BUILD_DATE=$$(date --iso-8601=seconds)" > $(OUT_DIR)/build.env
+	@echo "RELEASE=$(RELEASE)" >> $(OUT_DIR)/build.env  
+	@echo "PROJECT_NAME=$(PROJECT_NAME)" >> $(OUT_DIR)/build.env
+	@echo "Build completado exitosamente"
 
-run:
-	PORT=$(PORT) APP_ENV=$(APP_ENV) bash src/hello_service.sh
+$(OUT_DIR):
+	@mkdir -p $(OUT_DIR)
+
+test: build
+	@echo "Ejecutando suite de tests Bats..."
+	@bats tests/ || (echo "ERROR: Tests fallaron" && exit 1)
+	@echo "Todos los tests pasaron"
+
+run: build
+	@echo "Iniciando servicio Hello en puerto $(PORT)..."
+	@echo "Variables: PORT=$(PORT) APP_ENV=$(APP_ENV)"
+	PORT=$(PORT) APP_ENV=$(APP_ENV) LATENCY_THRESHOLD=1000 bash src/hello_service.sh
 
 # Instala el servicio systemd
 install-service: build
