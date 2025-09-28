@@ -130,3 +130,29 @@ generate_summary_report() {
         
     } | tee "$OUTPUT_DIR/summary_report.md"
 }
+
+
+# Funcion principal
+main() {
+    if [[ "$LOGFILE" != "/dev/stdin" && ! -f "$LOGFILE" ]]; then
+        log "ERROR: Archivo de log no encontrado: $LOGFILE"
+        exit 1
+    fi
+    
+    log "Procesando logs desde: $LOGFILE"
+    log "Directorio de salida: $OUTPUT_DIR"
+    
+    analyze_latencies
+    analyze_response_codes  
+    analyze_temporal_activity
+    analyze_endpoints
+    generate_summary_report
+    
+    log "Analisis completado. Archivos generados en $OUTPUT_DIR/"
+    ls -la "$OUTPUT_DIR"/*.txt "$OUTPUT_DIR"/*.md 2>/dev/null || true
+}
+
+# Ejecutar analisis si el script se llama directamente
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
