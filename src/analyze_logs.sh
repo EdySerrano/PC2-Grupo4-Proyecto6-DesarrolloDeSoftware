@@ -74,3 +74,24 @@ analyze_temporal_activity() {
         awk '{print "Hora " $2 ":XX - " $1 " eventos"}' | \
         tee "$OUTPUT_DIR/hourly_activity.txt"
 }
+
+
+# Analisis de endpoints mas utilizados
+analyze_endpoints() {
+    log "Analizando endpoints..."
+    
+    # Extraer tipos de endpoint de los logs
+    grep -E "(GET /(salud|metrics|unknown))" "$LOGFILE" 2>/dev/null | \
+        sed 's/.*GET \/\([a-z]*\) .*/\1/' | \
+        tr '[:lower:]' '[:upper:]' | \
+        sort | \
+        uniq -c | \
+        sort -nr | \
+        awk '{
+            endpoint = ($2 == "SALUD") ? "/salud" : 
+                      ($2 == "METRICS") ? "/metrics" : 
+                      ($2 == "UNKNOWN") ? "404_endpoints" : $2;
+            print endpoint ": " $1 " requests"
+        }' | \
+        tee "$OUTPUT_DIR/endpoint_usage.txt"
+}
