@@ -43,3 +43,19 @@ analyze_latencies() {
                 }
              }' | tee "$OUTPUT_DIR/latency_analysis.txt"
 }
+
+
+# Analisis de codigos de respuesta de HTTP
+analyze_response_codes() {
+    log "Analizando los codoigos de respuesta HTTP"
+    
+    # Extraer codigos HTTP, contar y ordenar
+    grep -E "(200 OK|404 Not Found)" "$LOGFILE" 2>/dev/null | \
+        sed 's/.*- \([0-9]*\) \([A-Za-z ]*\).*/\1 \2/' | \
+        cut -d' ' -f1 | \
+        sort | \
+        uniq -c | \
+        sort -nr | \
+        awk '{print "Codigo " $2 ": " $1 " requests"}' | \
+        tee "$OUTPUT_DIR/response_codes.txt"
+}
