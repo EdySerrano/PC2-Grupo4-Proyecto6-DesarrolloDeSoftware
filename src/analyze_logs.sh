@@ -95,3 +95,38 @@ analyze_endpoints() {
         }' | \
         tee "$OUTPUT_DIR/endpoint_usage.txt"
 }
+
+# Generar reporte consolidado
+generate_summary_report() {
+    log "Generando reporte consolidado"
+    
+    {
+        echo "# Reporte de Analisis del Servicio Hello"
+        echo "Generado: $(date --iso-8601=seconds)"
+        echo ""
+        
+        echo "## Analisis de Latencias"
+        cat "$OUTPUT_DIR/latency_analysis.txt" 2>/dev/null || echo "No hay datos de latencia"
+        echo ""
+        
+        echo "## Codigos de Respuesta HTTP"  
+        cat "$OUTPUT_DIR/response_codes.txt" 2>/dev/null || echo "No hay datos de respuesta"
+        echo ""
+        
+        echo "## Actividad por Hora"
+        cat "$OUTPUT_DIR/hourly_activity.txt" 2>/dev/null || echo "No hay datos temporales"
+        echo ""
+        
+        echo "## Uso de Endpoints"
+        cat "$OUTPUT_DIR/endpoint_usage.txt" 2>/dev/null || echo "No hay datos de endpoints"
+        echo ""
+        
+        echo "## Resumen de Archivos Generados"
+        find "$OUTPUT_DIR" -name "*.txt" | sort | while read -r file; do
+            lines=$(wc -l < "$file")
+            size=$(du -h "$file" | cut -f1)
+            echo "- $(basename "$file"): $lines lineas, $size"
+        done
+        
+    } | tee "$OUTPUT_DIR/summary_report.md"
+}
