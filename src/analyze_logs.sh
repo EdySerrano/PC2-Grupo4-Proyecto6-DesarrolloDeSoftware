@@ -59,3 +59,18 @@ analyze_response_codes() {
         awk '{print "Codigo " $2 ": " $1 " requests"}' | \
         tee "$OUTPUT_DIR/response_codes.txt"
 }
+
+
+# Analisis temporal de actividad
+analyze_temporal_activity() {
+    log "Analizando patrones temporales..."
+    
+    # Extraer horas de los logs y agrupar por hora
+    grep "\[INFO\]" "$LOGFILE" 2>/dev/null | \
+        sed 's/^\([0-9-]*T[0-9][0-9]\):[0-9][0-9]:[0-9][0-9].*/\1/' | \
+        cut -d'T' -f2 | \
+        sort | \
+        uniq -c | \
+        awk '{print "Hora " $2 ":XX - " $1 " eventos"}' | \
+        tee "$OUTPUT_DIR/hourly_activity.txt"
+}
