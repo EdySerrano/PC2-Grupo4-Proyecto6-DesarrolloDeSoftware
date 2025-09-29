@@ -37,3 +37,34 @@ teardown() {
   [[ "$output" =~ "requests_total" ]]
 }
 
+
+@test "Tercera request devuelve 404" {
+  # Arrange
+  local url="http://localhost:8080"
+  curl -s "$url" >/dev/null  # primera request
+  sleep 2
+  curl -s --max-time 5 "$url" >/dev/null  # segunda request
+  sleep 2
+
+  # Act
+  run curl -s --max-time 5 "$url"
+
+  # Assert
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "Not Found" ]]
+}
+
+
+@test "Headers HTTP correctos en todas las respuestas" {
+  # Arrange
+  local url="http://localhost:8080"
+
+  # Act
+  run curl -s -I "$url"
+
+  # Assert
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "HTTP/1.1 200 OK" ]]
+  [[ "$output" =~ "Content-Type: text/plain" ]]
+}
+
