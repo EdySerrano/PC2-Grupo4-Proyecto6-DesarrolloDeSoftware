@@ -55,6 +55,21 @@ run: build
 	@echo "Variables: PORT=$(PORT) APP_ENV=$(APP_ENV)"
 	PORT=$(PORT) APP_ENV=$(APP_ENV) LATENCY_THRESHOLD=1000 bash src/hello_service.sh
 
+
+analyze-logs: build
+	@echo "Ejecutando analisis de logs..."
+	@if [ -f "src/sample.log" ]; then \
+		bash src/analyze_logs.sh src/sample.log; \
+	else \
+		echo "No se encontro archivo de log. Creando ejemplo"; \
+		bash src/hello_service.sh & \
+		SERVICE_PID=$$!; \
+		sleep 2; \
+		kill $$SERVICE_PID 2>/dev/null || true; \
+		bash src/analyze_logs.sh /var/log/syslog 2>/dev/null || echo "Usando logs por defecto"; \
+	fi
+	@echo "analisis clompletado. Revise el directorio out/"
+
 # Empaquetado reproducible
 pack: build test
 	@echo "Creando paquete reproducible..."
@@ -129,6 +144,7 @@ help:
 	@echo "  build          : Genera artefactos intermedios en $(OUT_DIR)/"
 	@echo "  test           : Ejecuta suite de tests Bats"  
 	@echo "  run            : Ejecuta el servicio Hello (PORT=$(PORT), APP_ENV=$(APP_ENV))"
+	@echo "  analyze-logs   : Ejecuta analisis de log (analyze_logs.sh) con herramientas Unix"
 	@echo "  pack           : Crea paquete reproducible en $(DIST_DIR)/"
 	@echo "  clean          : Elimina $(OUT_DIR)/ y $(DIST_DIR)/"
 	@echo ""
