@@ -68,3 +68,35 @@ teardown() {
   [[ "$output" =~ "Content-Type: text/plain" ]]
 }
 
+
+@test "Metricas incluyen latencia y threshold status" {
+  # Arrange
+  local url="http://localhost:8080"
+  curl -s "$url" >/dev/null
+  sleep 2
+
+  # Act
+  run curl -s --max-time 5 "$url"
+
+  # Assert
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "latency_status" ]]
+  [[ "$output" =~ "latency_status OK" ]] || [[ "$output" =~ "latency_status HIGH" ]]
+}
+
+
+@test "Servicio responde con uptime creciente" {
+  # Arrange
+  local url="http://localhost:8080"
+  curl -s "$url" >/dev/null
+  sleep 2
+
+  # Act
+  run curl -s "$url"
+
+  # Assert
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "uptime_seconds" ]]
+  uptime=$(echo "$output" | grep "uptime_seconds" | cut -d' ' -f2)
+  [ "$uptime" -gt 0 ]
+}
