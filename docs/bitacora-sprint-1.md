@@ -76,6 +76,9 @@ $ make test
 | Variables de entorno | 3 |
 | Cobertura de endpoints | 100% (/salud) |
 
+## Video Sprint-1:
+* **Link**:**[Sprint-1](https://www.youtube.com/watch?v=Cn3vUcLq9WI).**
+
 ## Conclusión Sprint 1
 **COMPLETADO** - Todos los objetivos del Sprint 1 fueron implementados exitosamente.
 La base de código está establecida siguiendo 12-Factor, con configuración por variables de entorno y chequeos iniciales funcionando correctamente.

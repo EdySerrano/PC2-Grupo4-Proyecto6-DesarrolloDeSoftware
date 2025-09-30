@@ -125,5 +125,8 @@ metrics=$(printf "requests_total %d\nuptime_seconds %d\nlast_request_ms %d\nlate
 | Targets systemd | 5 |
 | Tests con casos negativos | 3 |
 
+## Video Sprint-2:
+* **Link**:**[Sprint-2](https://www.youtube.com/watch?v=P5ZuKGg8qxc).**
+
 ## Conclusion Sprint 2
 **COMPLETADO** - Implementacion robusta de Bash defensivo, integracion completa con systemd/journalctl, metricas avanzadas con thresholds y analisis de logs sofisticado usando herramientas Unix.

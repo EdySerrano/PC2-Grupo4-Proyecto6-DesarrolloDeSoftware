@@ -132,5 +132,8 @@ make run      # Ejecuta con configuración runtime
 - **4 metricas** de observabilidad
 - **3 bitacoras** completas por sprint
 
+## Video Sprint-3:
+* **Link**:**[Sprint-3]().**
+
 ## Conclusión Sprint 3
 **COMPLETADO** - Proyecto listo para demostracion end-to-end con integracion completa, empaquetado reproducible, validacion de idempotencia y trazabilidad completa.
