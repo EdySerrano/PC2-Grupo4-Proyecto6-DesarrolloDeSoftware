@@ -39,13 +39,11 @@ $(DIST_DIR):
 	@mkdir -p $(DIST_DIR)
 
 test: build ## Ejecuta tests
-	@echo "=== TEST STAGE ==="
 	@echo "Ejecutando suite de tests Bats..."
 	@bats tests/ || (echo "ERROR: Tests fallaron" && exit 1)
 	@echo "Todos los tests pasaron"
 
 release: pack ## Crea un release con metadatos
-	@echo "=== RELEASE STAGE ==="
 	@echo "Creando release $(RELEASE) para entorno $(APP_ENV)..."
 	@mkdir -p $(OUT_DIR)/releases/$(RELEASE)
 	@echo "RELEASE_DATE=$$(date --iso-8601=seconds)" > $(OUT_DIR)/releases/$(RELEASE)/release.env
@@ -56,7 +54,6 @@ release: pack ## Crea un release con metadatos
 	@echo "Release $(RELEASE) creado en $(OUT_DIR)/releases/$(RELEASE)/"
 
 run: build ## Ejecuta el servicio localmente
-	@echo "=== RUN STAGE ==="
 	@echo "Iniciando servicio Hello en puerto $(PORT)..."
 	@echo "Variables runtime: PORT=$(PORT) APP_ENV=$(APP_ENV)"
 	@echo "Build info: $$(cat $(OUT_DIR)/build.env 2>/dev/null | grep BUILD_DATE || echo 'Build date: unknown')"
