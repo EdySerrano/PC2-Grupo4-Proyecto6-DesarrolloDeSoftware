@@ -24,13 +24,17 @@ PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/
 ├── src/                            # Scripts en Bash con manejo robusto
 │   ├── hello_service.sh            # Servicio HTTP principal (/salud, /metrics)
 │   ├── analyze_logs.sh             # Análisis de logs con herramientas Unix
-│   └── sample.log                  # Datos de ejemplo para análisis
+│   ├── build.sh                    # Construye el servicio
+│   ├── package.sh                  # Empaqueta
+│   └── sample.log                  
 │
 ├── systemd/                        # Integración systemd completa
 │   └── hello.service               # Unidad de servicio con journalctl
 │
 ├── tests/                          # Pruebas automatizadas AAA/RGR
-│   └── health.bats                 # Suite completa con 6 tests
+│   ├── idempotency.bats
+│   ├── incremental_cache.bats
+│   └── health.bats                 
 │
 ├── out/                            # Artefactos intermedios y releases
 │   ├── build.env                   # Metadatos de build
@@ -91,19 +95,19 @@ Las siguientes variables controlan el comportamiento del sistema siguiendo 12-Fa
 
 ## Ramas:
 *Sprint-1:*
-- *Hinojosa Frank:* [Frank-Hinojosa/dns-networking]()
-- *Choquecambi Germain:* [Germain-Choquechambi/automatizacion-test]()
-- *Serrano Edy:* [Edy-Serrano/servicio-HTTP]()
+- *Hinojosa Frank:* [Frank-Hinojosa/dns-networking](https://github.com/EdySerrano/PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/tree/Frank-Hinojosa/dns-networking)
+- *Choquecambi Germain:* [Germain-Choquechambi/automatizacion-test](https://github.com/EdySerrano/PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/tree/Germain-Choquechambi/automatizacion-test)
+- *Serrano Edy:* [Edy-Serrano/servicio-HTTP](https://github.com/EdySerrano/PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/tree/Edy-Serrano/servicio-HTTP)
 
 *Sprint-2:*
-- *Hinojosa Frank:* [Frank-hinojosa/package-systemd]()
-- *Choquecambi Germain:* [Germain-Choquechambi/analyze-logs]()
-- *Serrano Edy:* [Edy-Serrano/servicio-metricas]()
+- *Hinojosa Frank:* [Frank-hinojosa/package-systemd](https://github.com/EdySerrano/PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/tree/Frank-Hinojosa/package-systemd)
+- *Choquecambi Germain:* [Germain-Choquechambi/analyze-logs](https://github.com/EdySerrano/PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/tree/Germain-Choquechambi/analyze-logs)
+- *Serrano Edy:* [Edy-Serrano/servicio-metricas](https://github.com/EdySerrano/PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/tree/Edy-Serrano/servicio-metricas)
 
 *Sprint-3:*
-- *Hinojosa Frank:* [frank-hinojosa/-]()
-- *Choquecambi Germain:* [Germain-Choquechambi/-]()
-- *Serrano Edy:* [Edy-Serrano/Documentacion-bitacoras]()
+- *Hinojosa Frank:* [frank-hinojosa/modular-build-package-scripts](https://github.com/EdySerrano/PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/tree/Frank-Hinojosa/modular-build-package-scripts)
+- *Choquecambi Germain:* [Germain-Choquechambi/test-incremental-cache-idempotency](https://github.com/EdySerrano/PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/tree/Germain-Choquechambi/test-incremental-cache-idempotency)
+- *Serrano Edy:* [Edy-Serrano/Documentacion-bitacoras](https://github.com/EdySerrano/PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/tree/Edy-Serrano/Documentacion-bitacoras)
 
 ## Tablero Kanban:
 En este proyecto de utilizo el Tablero Kanban lo que facilito el registro y procedimiento en cada etapa del desarrollo el proyecto, en donde se registraron [Las historias de usuario](https://github.com/EdySerrano/PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/issues?q=is%3Aissue%20state%3Aclosed) especificando lo que se va implementar y luego de eso realizar el [Pull Request](https://github.com/EdySerrano/PC2-Grupo4-Proyecto6-DesarrolloDeSoftware/pulls?q=is%3Apr+is%3Aclosed) para la revision de los demas integrantes y asi practicar una metodologia Agil.
