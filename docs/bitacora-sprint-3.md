@@ -133,7 +133,7 @@ make run      # Ejecuta con configuración runtime
 - **3 bitacoras** completas por sprint
 
 ## Video Sprint-3:
-* **Link**:**[Sprint-3]().**
+* **Link**:**[Sprint-3](https://www.youtube.com/watch?v=pVj96tkydEc).**
 
 ## Conclusión Sprint 3
 **COMPLETADO** - Proyecto listo para demostracion end-to-end con integracion completa, empaquetado reproducible, validacion de idempotencia y trazabilidad completa.
