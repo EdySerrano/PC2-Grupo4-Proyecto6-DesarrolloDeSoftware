@@ -8,8 +8,9 @@ START_TIME=$(date +%s)
 LATENCY_THRESHOLD=${LATENCY_THRESHOLD:-1000} # En ms
 
 log() {
-  # Log estructurado con timestamp y nivel
-  echo "$(date --iso-8601=seconds) [INFO] $1" >&2
+  local message="$(date --iso-8601=seconds) [INFO] $1"
+  echo "$message" >&2
+  echo "$message" >> "${LOG_FILE:-src/sample.log}"
 }
 
 cleanup() {

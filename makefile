@@ -4,14 +4,18 @@ MESSAGE ?= Hola_desde_systemd
 RELEASE ?= v1.0.0
 PROJECT_NAME = hello-oservabilidad-grupo4
 APP_ENV ?= dev
+.DEFAULT_GOAL := help
+.DELETE_ON_ERROR:
 
-# Directorios	|
+# Directorios
 OUT_DIR = out
 DIST_DIR = dist
 
 .PHONY: tools build test run pack clean help install-service uninstall-service start-service stop-service status-service
 
-tools:
+all: tools build test analyze-logs pack ## Construir, testear, analizar logs y empaquetar todo
+
+tools: ## Verifica que las herramientas necesarias estén instaladas
 	@echo "Verificando herramientas requeridas..."
 	@command -v nc >/dev/null || (echo "ERROR: nc no instalado" && exit 1)
 	@command -v curl >/dev/null || (echo "ERROR: curl no instalado" && exit 1)  
@@ -21,42 +25,44 @@ tools:
 	@command -v journalctl >/dev/null || (echo "ERROR: journalctl no instalado" && exit 1)
 	@echo "Todas las herramientas están disponibles"
 
-# Regla patrón para generar artefactos de análisis
-$(OUT_DIR)/%.analysis: src/%.sh | $(OUT_DIR)
-	@echo "Generando análisis para $<..."
-	@bash -n $< && echo "✓ Sintaxis válida" > $@
-	@echo "Líneas de código: $$(wc -l < $<)" >> $@
-	@echo "Funciones definidas: $$(grep -c '^[a-zA-Z_][a-zA-Z0-9_]*()' $< || echo 0)" >> $@
+build: tools $(OUT_DIR) $(OUT_DIR)/build.timestamp ## Cache inteligente: solo rebuild si hay cambios
+	@echo "Build completado exitosamente (usando caché incremental)"
 
-build: tools $(OUT_DIR)
-	@echo "Generando artefactos intermedios..."
-	@mkdir -p $(OUT_DIR)
-	@echo "Verificando sintaxis de scripts..."
-	@for script in src/*.sh; do \
-		echo "Verificando $$script..."; \
-		bash -n $$script || exit 1; \
-	done
-	@echo "Creando archivo de configuración de build..."
-	@echo "BUILD_DATE=$$(date --iso-8601=seconds)" > $(OUT_DIR)/build.env
-	@echo "RELEASE=$(RELEASE)" >> $(OUT_DIR)/build.env  
-	@echo "PROJECT_NAME=$(PROJECT_NAME)" >> $(OUT_DIR)/build.env
-	@echo "Build completado exitosamente"
+$(OUT_DIR)/build.timestamp: src/*.sh makefile | $(OUT_DIR)
+	@bash src/build.sh
+	@touch $@
 
 $(OUT_DIR):
 	@mkdir -p $(OUT_DIR)
 
-test: build
+$(DIST_DIR):
+	@mkdir -p $(DIST_DIR)
+
+test: build ## Ejecuta tests
+	@echo "=== TEST STAGE ==="
 	@echo "Ejecutando suite de tests Bats..."
 	@bats tests/ || (echo "ERROR: Tests fallaron" && exit 1)
 	@echo "Todos los tests pasaron"
 
-run: build
+release: pack ## Crea un release con metadatos
+	@echo "=== RELEASE STAGE ==="
+	@echo "Creando release $(RELEASE) para entorno $(APP_ENV)..."
+	@mkdir -p $(OUT_DIR)/releases/$(RELEASE)
+	@echo "RELEASE_DATE=$$(date --iso-8601=seconds)" > $(OUT_DIR)/releases/$(RELEASE)/release.env
+	@echo "RELEASE_VERSION=$(RELEASE)" >> $(OUT_DIR)/releases/$(RELEASE)/release.env
+	@echo "TARGET_ENV=$(APP_ENV)" >> $(OUT_DIR)/releases/$(RELEASE)/release.env
+	@echo "ARTIFACT_HASH=$$(sha256sum $(DIST_DIR)/$(PROJECT_NAME)-$(RELEASE).tar.gz | cut -d' ' -f1)" >> $(OUT_DIR)/releases/$(RELEASE)/release.env
+	@cp $(DIST_DIR)/$(PROJECT_NAME)-$(RELEASE)* $(OUT_DIR)/releases/$(RELEASE)/
+	@echo "Release $(RELEASE) creado en $(OUT_DIR)/releases/$(RELEASE)/"
+
+run: build ## Ejecuta el servicio localmente
+	@echo "=== RUN STAGE ==="
 	@echo "Iniciando servicio Hello en puerto $(PORT)..."
-	@echo "Variables: PORT=$(PORT) APP_ENV=$(APP_ENV)"
+	@echo "Variables runtime: PORT=$(PORT) APP_ENV=$(APP_ENV)"
+	@echo "Build info: $$(cat $(OUT_DIR)/build.env 2>/dev/null | grep BUILD_DATE || echo 'Build date: unknown')"
 	PORT=$(PORT) APP_ENV=$(APP_ENV) LATENCY_THRESHOLD=1000 bash src/hello_service.sh
 
-
-analyze-logs: build
+analyze-logs: build ## Analiza logs y genera reportes
 	@echo "Ejecutando analisis de logs..."
 	@if [ -f "src/sample.log" ]; then \
 		bash src/analyze_logs.sh src/sample.log; \
@@ -70,21 +76,13 @@ analyze-logs: build
 	fi
 	@echo "analisis clompletado. Revise el directorio out/"
 
-# Empaquetado reproducible
-pack: build test
-	@echo "Creando paquete reproducible..."
-	@mkdir -p $(DIST_DIR)
-	@echo "Empaquetando $(PROJECT_NAME)-$(RELEASE)..."
-	@tar --transform 's|^|$(PROJECT_NAME)-$(RELEASE)/|' \
-		-czf $(DIST_DIR)/$(PROJECT_NAME)-$(RELEASE).tar.gz \
-		src/ tests/ systemd/ makefile README.md docs/ $(OUT_DIR)/
-	@echo "Generando checksums..."
-	@cd $(DIST_DIR) && sha256sum $(PROJECT_NAME)-$(RELEASE).tar.gz > $(PROJECT_NAME)-$(RELEASE).sha256
-	@echo "Paquete creado: $(DIST_DIR)/$(PROJECT_NAME)-$(RELEASE).tar.gz"
-	@ls -lh $(DIST_DIR)/
+$(DIST_DIR)/$(PROJECT_NAME)-$(RELEASE)-manifest.json: $(OUT_DIR)/build.timestamp | $(DIST_DIR)
+	@bash src/package.sh
 
-# Limpieza segura
-clean:
+pack: build test $(DIST_DIR)/$(PROJECT_NAME)-$(RELEASE)-manifest.json ## Empaquetar artefactos con metadatos
+	@echo "Paquete reproducible creado exitosamente"
+
+clean: ## Limpieza segura
 	@echo "Limpiando artefactos..."
 	@if [ -d "$(OUT_DIR)" ]; then \
 		echo "Eliminando $(OUT_DIR)/..."; \
@@ -96,8 +94,7 @@ clean:
 	fi
 	@echo "Limpieza completada"
 
-# Instala el servicio systemd
-install-service: build
+install-service: build ## Instala el servicio systemd
 	@echo "Instalando servicio systemd..."
 	@sed 's|{{PROJECT_DIR}}|$(PWD)|g' systemd/hello.service > out/hello.service
 	@sed -i 's|Environment=PORT=8080 MESSAGE=Hola_desde_systemd|Environment=PORT=$(PORT) MESSAGE=$(MESSAGE)|g' out/hello.service
@@ -105,8 +102,7 @@ install-service: build
 	@sudo systemctl daemon-reload
 	@echo "Servicio instalado."
 
-# Desinstala el servicio systemd
-uninstall-service:
+uninstall-service: ## Desinstala el servicio systemd
 	@echo "Desinstalando servicio systemd..."
 	@sudo systemctl stop hello 2>/dev/null || true
 	@sudo systemctl disable hello 2>/dev/null || true
@@ -114,48 +110,23 @@ uninstall-service:
 	@sudo systemctl daemon-reload
 	@echo "Servicio desinstalado"
 
-# Inicia el servicio systemd
-start-service:
+start-service: ## Inicia el servicio systemd
 	@echo "Iniciando servicio"
 	@sudo systemctl enable hello
 	@sudo systemctl start hello
 	@echo "Servicio iniciado. Use 'make status-service' para verificar"
 
-# Detiene el servicio systemd
-stop-service:
+stop-service: ## Detiene el servicio systemd
 	@echo "Deteniendo servicio"
 	@sudo systemctl stop hello || true
 	@echo "Servicio detenido."
 
-# Muestra el estado del servicio systemd
-status-service:
+status-service: ## Muestra el estado del servicio systemd
 	@echo "Estado del servicio:"
 	@sudo systemctl status hello --no-pager || true
 	@echo ""
 	@echo "Logs recientes:"
 	@sudo journalctl -u hello --no-pager -n 10 || true
 	
-# Documentación de uso
-help:
-	@echo "Makefile para $(PROJECT_NAME)"
-	@echo ""
-	@echo "Targets disponibles:"
-	@echo "  tools          : Verifica herramientas requeridas (nc, curl, dig, bats, ss, journalctl)"
-	@echo "  build          : Genera artefactos intermedios en $(OUT_DIR)/"
-	@echo "  test           : Ejecuta suite de tests Bats"  
-	@echo "  run            : Ejecuta el servicio Hello (PORT=$(PORT), APP_ENV=$(APP_ENV))"
-	@echo "  analyze-logs   : Ejecuta analisis de log (analyze_logs.sh) con herramientas Unix"
-	@echo "  pack           : Crea paquete reproducible en $(DIST_DIR)/"
-	@echo "  clean          : Elimina $(OUT_DIR)/ y $(DIST_DIR)/"
-	@echo ""
-	@echo "Targets de systemd:"
-	@echo "  install-service : Instala servicio systemd"
-	@echo "  start-service   : Inicia servicio systemd" 
-	@echo "  stop-service    : Detiene servicio systemd"
-	@echo "  status-service  : Muestra estado del servicio"
-	@echo "  uninstall-service : Desinstala servicio systemd"
-	@echo ""
-	@echo "Variables de entorno:"
-	@echo "  PORT=$(PORT)			: Puerto HTTP del servicio"
-	@echo "  APP_ENV=$(APP_ENV)		: Entorno de ejecución (dev/prod)"
-	@echo "  RELEASE=$(RELEASE)		: Versión del release"
+help: ## Mostrar ayuda
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk -F':|##' '{printf "  %-20s %s\n", $$1, $$3}'
