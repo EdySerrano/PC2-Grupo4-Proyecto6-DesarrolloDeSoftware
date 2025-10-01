@@ -88,9 +88,10 @@ analyze_endpoints() {
         uniq -c | \
         sort -nr | \
         awk '{
-            endpoint = ($2 == "SALUD") ? "/salud" : 
-                      ($2 == "METRICS") ? "/metrics" : 
-                      ($2 == "UNKNOWN") ? "404_endpoints" : $2;
+            if ($2 == "SALUD") endpoint = "/salud";
+            else if ($2 == "METRICS") endpoint = "/metrics"; 
+            else if ($2 == "UNKNOWN") endpoint = "404_endpoints";
+            else endpoint = $2;
             print endpoint ": " $1 " requests"
         }' | \
         tee "$OUTPUT_DIR/endpoint_usage.txt"
